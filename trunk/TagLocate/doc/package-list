@@ -1,0 +1,9 @@
+de.berlin.magun.nfcmime
+de.berlin.magun.nfcmime.core
+de.berlin.magun.protocol
+de.bolz.android.taglocate
+de.bolz.android.taglocate.geom
+de.bolz.android.taglocate.geom.data
+de.bolz.android.taglocate.protocol
+de.bolz.android.taglocate.protocol.data
+de.bolz.android.taglocate.ui

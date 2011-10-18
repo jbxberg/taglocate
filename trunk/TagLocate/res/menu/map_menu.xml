@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:title="@string/qr_locate" android:id="@+id/qr_menu_item"></item>
+    <item android:title="@string/settings" android:id="@+id/settings_menu_item"></item>
+    <item android:id="@+id/reference_tag_item" android:title="@string/reference_tag"></item>
+    <item android:title="@string/howto" android:id="@+id/help_menu_item"></item> 
+</menu>
