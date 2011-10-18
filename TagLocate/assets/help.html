@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body>
+	<h2>TagLocate</h2>
+	<p><b>v.0.4</b> <br>
+		2011 <a href="mailto:johannes-bolz@gmx.net">Johannes Bolz</a>, <a href="http://magun.beuth-hochschule.de">MAGUN project</a><br>
+		This application is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache
+		License, Version 2.0</a>.</p>
+		
+	<h3>What is this?</h3>
+	<p>Tag Locate is a demonstrator application for object-based indoor positioning, focusing mainly on NFC 
+	technology. However, it also supports QR codes.</p>
+	
+	<h3>How to locate</h3>
+	<p><i><b>NFC</b></i>: Put the device against a NFC tag that contains location information while the app is running. <br>
+	<i><b>QR</b></i>: Press menu key, select "QR Locate". <a href="market://details?id=com.google.zxing.client.android">'Barcode Scanner'</a> 
+	must be installed for this to work.</p>
+	
+	<h3>Tag data format</h3>
+	<p>Tag Locate supports <a href="http://en.wikipedia.org/wiki/Geo_URI">Geo-URI's</a> as well as 
+	<a href="http://magun.beuth-hochschule.de">iii-URI's</a> containing a Geo-URI target element.<br>
+	For QR-codes, use <a href="http://zxing.appspot.com/generator/">'Geo-QR code'</a>, which is basically a Geo-URI.</p>
+	
+	<h3>ID resolution</h3>
+	<p>In addition to explicit location URI's written on the tags, the unique ID of NFC tags may also be used for getting a
+	location. In this case, the application uses a reference file that links those ID's with coordinates. QR codes may also be
+	used as ID's, in which case their specific content will be no further evaluated. See the default reference file 
+	(/sdcard/taglocate/default.iir) for more information.</p>
+	
+	<h3>Resolution strategies</h3>
+	<p>There are multiple strategies to get location information out of tags:<br><br>
+	<i><b>ID first:</b></i> The tag will only be evaluated for an explicit location link, if it's ID cannot
+	be found in the link file.<br>
+	<i><b>Link first:</b></i> The ID will only be looked up if the tag doesn't contain an explicit location link.<br>
+	<i><b>ID only:</b></i> Only the ID will be evaluated.<br>
+	<i><b>Link only:</b></i> Only the payload data will be evaluated.</p>
+	
+	<h3>Files</h3>
+	<p>The /taglocate/ folder on the SD card contains geometry files and link files. You can define your
+	own files here. Note that the geometry files currently use a very simplistic <a href="http://wiki.openstreetmap.org/wiki/XML">OSM format</a>, only 
+	supporting 'node' and 'way' elements.</p>
+	
+	<h3>File download from NFC</h3>
+	<p>It is possible to store geometry and link files on NFC tags. Those files may be downloaded and 
+	applied. To create a NFC tag containing files, put the desired files into a ZIP archive and write
+	the archive's byte array into a NDEF record using the MIME declaration 'application/zip'.</p>
+	
+	<h3>Reference new Tags</h3>
+	<p>To reference new NFC tags or QR codes, select 'Add Tag' from the options menu. A crosshairs symbol
+	will appear in the center of the map. Move the view so that the symbol marks the location you want to
+	associate with the tag. Select 'Add Tag here'. Now you can choose between: <br><br>
+	<b><i>'Write NFC Tag': </i></b>The location will be written to a NFC tag using a Geo-URI.<br>
+	<b><i>'Reference NFC ID': </i></b>The tag's ID will be associated with a location within the local
+	reference model (i.e. IIR file). If the ID has already been referenced, the reference will be updated
+	with the new location.<br>
+	<b><i>'Reference QR Code': </i></b>The QR code will be referenced in the local reference model just 
+	like a NFC ID. So make sure the QR's content is unique.<br>
+	</p>
+</html>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<!-- UI Strings: -->
+		<!-- titles, static descriptions: -->
+    <string name="app_name">TagLocate</string>
+    <string name="qr_locate">QR Locate</string>
+    <string name="settings">Options</string>
+    <string name="howto">About / How to Use</string>
+    <string name="title_gf_preference">Geometry File</string>
+    <string name="files_preferences">Files</string>
+    <string name="title_lf_preference">Reference File</string>
+    <string name="processing_preferences">Processing</string>
+    <string name="loadfiles_preference">Load Files from NFC</string>
+    <string name="loadfiles_summary">Download and apply geometry and reference files, if available.</string>
+    <string name="title_strategy_preference">Resolution Strategy</string>
+    <string name="message_bc_unavailable">Please install \'Barcode Scanner\' to read QR codes.</string>
+    <string name="title_ml_disabled">Mock locations disabled</string>
+    <string name="message_ml_disabled">This application requires the \'Mock Locations\' system setting 
+    	to be enabled. Go to \'Application Preferences\' -> \'Development\' 
+    	and check \'Allow Mock Locations\'.</string>
+   	<string name="message_nfc_not_supported">Not supported on this device.</string>
+   	<string name="add_tag_btn">Add Tag here</string>
+   	<string name="cancel_btn">Cancel</string>
+   	<string name="reference_tag">Add Tag</string>
+   	<string name="initial_nfc_dialog">Please scan NFC tag...</string>
+   	<string name="done">Done.</string>
+   	<string name="ok">OK</string>
+   	<string name="write_fail">Write failed!</string>
+    <string name="format_msg">Formatted tag. Please scan again!</string>
+    <string name="reference_done">Referenced tag: </string>
+    <string name="reffile_found">Found Reference File!</string>
+    <string name="geomfile_found">Found Geometry File!</string>
+    
+    <!-- Configuration Strings: -->
+    <string name="default_geometry_file">default.osm</string>
+    <string name="qr_reader_package">com.google.zxing.client.android</string>
+    <string name="qr_scan_action">com.google.zxing.client.android.SCAN</string>
+    <string name="help_url">file:///android_asset/help.html</string>
+    
+    <!-- Key Strings: -->
+    <string name="strategy_preference">strategy preference key</string>
+    <string name="link_file_preference">link file preference key</string>
+    <string name="geometry_file_preference">geometry file preference key</string>
+    <string name="hidden_prefs">hidden prefs key</string>
+    <string name="lat_preference">lat preference key</string>
+    <string name="lon_preference">lon preference key</string>
+    <string name="zoom_preference">zoom preference key</string>
+    <string name="edit_mode_preference">edit mode preference key</string>
+    <string name="center_lon">view center lon key</string>
+    <string name="center_lat">view center lat key</string>
+    <string name="result_lat">result lat key</string>
+    <string name="result_lon">result lon key</string>
+    <string name="nfc_edit_mode">nfc edit mode key</string>
+    
+
+</resources>
