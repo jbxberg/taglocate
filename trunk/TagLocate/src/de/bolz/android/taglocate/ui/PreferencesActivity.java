@@ -28,6 +28,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import roboguice.activity.RoboPreferenceActivity;
+import roboguice.inject.InjectResource;
+
 import de.bolz.android.taglocate.R;
 import de.bolz.android.taglocate.protocol.SettingsSingleton;
 import android.nfc.NfcAdapter;
@@ -37,7 +40,6 @@ import android.os.Environment;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
@@ -47,7 +49,8 @@ import android.preference.PreferenceScreen;
  * 
  * @author Johannes Bolz
  */
-public class PreferencesActivity extends PreferenceActivity {
+public class PreferencesActivity extends RoboPreferenceActivity {
+	@InjectResource(R.string.datapath) private String dataPath;
 	private CharSequence[] osmCs;
 	private CharSequence[] iirCs;
 	private ListPreference geometryFilePreference, linkFilePreference,
@@ -155,7 +158,7 @@ public class PreferencesActivity extends PreferenceActivity {
 	 */
 	private void getFileArrays() {
 		File dir = new File(Environment.getExternalStorageDirectory().getName()
-				+ GMapActivity.DATAPATH);
+				+ dataPath);
 		String[] files = dir.list();
 		List<CharSequence> osm = new ArrayList<CharSequence>();
 		List<CharSequence> iir = new ArrayList<CharSequence>();

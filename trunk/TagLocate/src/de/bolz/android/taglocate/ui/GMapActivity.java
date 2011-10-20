@@ -36,11 +36,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
+import roboguice.activity.RoboMapActivity;
+import roboguice.inject.InjectResource;
+import roboguice.inject.InjectView;
+
 import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
+import com.google.inject.Inject;
 
 import de.bolz.android.taglocate.R;
 import de.bolz.android.taglocate.protocol.IntentResolver;
@@ -48,7 +52,6 @@ import de.bolz.android.taglocate.protocol.SettingsSingleton;
 
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -66,7 +69,6 @@ import android.nfc.tech.NfcV;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -94,26 +96,29 @@ import android.widget.Toast;
  * @author Johannes Bolz
  *
  */
-public class GMapActivity extends MapActivity {
+public class GMapActivity extends RoboMapActivity {
 
 	// custom LocationProvider ID:
-	protected static final String TAG_LOCATION = "taglocation"; 
+	@InjectResource(R.string.tag_location_provider) protected String tagLocation; 
 	
 	// default configuration values:
-	protected static final String DEFAULTLINKFILE = "default.iir";
-	protected static final String DATAPATH = "/taglocate/";
-	protected static final String DEFAULTGEOMETRYFILE = "default.osm";
-	protected static final int DEFAULT_ZOOM = 20;
-	protected static final double DEFAULT_LAT = 52.545490803744265;
-	protected static final double DEFAULT_LON = 13.355747670676614;
+	@InjectResource(R.string.default_link_file) protected String defaultLinkFile;
+	@InjectResource(R.string.datapath) protected String dataPath;
+	@InjectResource(R.string.default_geometry_file) protected String defaultGeometryFile;
+	@InjectResource(R.string.default_zoom) protected String defaultZoom;
+	@InjectResource(R.string.default_lat) protected String defaultLat;
+	@InjectResource(R.string.default_lon) protected String defaultLon;
 
 	// private objects:
-	private MapView mapView;
-	private LinearLayout btnLayout;
+	@InjectView(R.id.mapview) private MapView mapView;
+	@InjectView(R.id.btnLayout) private LinearLayout btnLayout;
+	@Inject private LocationMarkerOverlay locOverlay;
+	@Inject private EditModeOverlay editOverlay;
+	@Inject private LocationManager locationManager;
+	@Inject SharedPreferences prefs;
+	@Inject NfcAdapter nfcAdapter;
+	
 	private List<Overlay> mapOverlays;
-	private LocationMarkerOverlay locOverlay;
-	private EditModeOverlay editOverlay;
-	private LocationManager locationManager;
 	private MapController mapController;
 	private PendingIntent pi;
 	private IntentFilter[] filters;
@@ -132,34 +137,31 @@ public class GMapActivity extends MapActivity {
 		super.onCreate(savedInstanceState);
 
 		// Check if the 'Allow Mock Location' system setting is enabled.
-		// If not, display an info dialog and close the application.
+		// If not, -display an info dialog and close the application.
 		if (!mockLocationEnabled()) {
 			showMLDialog();
 		} else {
 
 			// Get preferences from saved application state or apply default values:
-			SharedPreferences prefs = PreferenceManager
-					.getDefaultSharedPreferences(getBaseContext());
-
 			this.lon = Double.parseDouble(prefs.getString(getString(R.string.lon_preference),
-					String.valueOf(DEFAULT_LON)));
+					defaultLon));
 			this.lat = Double.parseDouble(prefs.getString(getString(R.string.lat_preference),
-					String.valueOf(DEFAULT_LAT)));
+					defaultLat));
 			this.zoom = Integer.parseInt(prefs.getString(getString(R.string.zoom_preference),
-					String.valueOf(DEFAULT_ZOOM)));
+					defaultZoom));
 			
 			this.editMode = prefs.getBoolean(getString(R.string.edit_mode_preference), this.editMode);
 
 			SettingsSingleton.getInstance().setDatafile(
 					prefs.getString(getString(R.string.link_file_preference),
-							DEFAULTLINKFILE));
+							defaultLinkFile));
 			SettingsSingleton.getInstance().setDatapath(
 					Environment.getExternalStorageDirectory().getName()
-							+ DATAPATH);
+							+ dataPath);
 			SettingsSingleton.getInstance().setGeometryfile(
 					prefs.getString(
 							getString(R.string.geometry_file_preference),
-							DEFAULTGEOMETRYFILE));
+							defaultGeometryFile));
 			SettingsSingleton.getInstance().setDownloadFromNfc(
 					prefs.getBoolean(getString(R.string.loadfiles_preference),
 							true));
@@ -174,12 +176,10 @@ public class GMapActivity extends MapActivity {
 
 			// setup map view:
 			setContentView(R.layout.main);
-			mapView = (MapView) findViewById(R.id.mapview);
 			mapView.setBuiltInZoomControls(true);
 			mapView.setSatellite(true);
 			mapOverlays = mapView.getOverlays();
 			mapOverlays.add(new VectorOverlay());
-			locOverlay = new LocationMarkerOverlay(getApplicationContext());
 			locOverlay.setCoords(this.lon, this.lat);
 			mapOverlays.add(locOverlay);
 			mapController = mapView.getController();
@@ -194,10 +194,9 @@ public class GMapActivity extends MapActivity {
 
 			// Create a new LocationProvider for tag locations and an according listener
 			// requesting location updates from it:
-			locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 			listener = new TagLocationListener();
 			createLocationProvider();
-			locationManager.requestLocationUpdates(TAG_LOCATION, 0, 0, listener);
+			locationManager.requestLocationUpdates(tagLocation, 0, 0, listener);
 			
 			// Update LocationProvider to last tag location:
 			updateLocation(this.lon, this.lat);
@@ -218,8 +217,6 @@ public class GMapActivity extends MapActivity {
 		super.onPause();
 		if (mockLocationEnabled()) {
 			// Store persistent values into preferences:
-			SharedPreferences prefs = PreferenceManager
-					.getDefaultSharedPreferences(getBaseContext());
 			SharedPreferences.Editor ed = prefs.edit();
 			ed.putString(getString(R.string.lon_preference), String.valueOf(this.lon));
 			ed.putString(getString(R.string.lat_preference), String.valueOf(this.lat));
@@ -237,7 +234,7 @@ public class GMapActivity extends MapActivity {
 			
 			// Check NFC support, disable foreground intent dispatch:
 			if (hasNfcSupport()) {
-				NfcAdapter.getDefaultAdapter(this).disableForegroundDispatch(
+				nfcAdapter.disableForegroundDispatch(
 						this);
 			}
 		}
@@ -256,9 +253,7 @@ public class GMapActivity extends MapActivity {
 		} else {
 			// Check for NFC support, enable foreground intent dispatch:
 			if (hasNfcSupport()) {
-				NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
-				adapter.enableForegroundDispatch(this, pi, filters, techLists);
-				adapter.enableForegroundDispatch(this, pi, filters, techLists);
+				nfcAdapter.enableForegroundDispatch(this, pi, filters, techLists);
 			}
 		}
 	}
@@ -270,7 +265,7 @@ public class GMapActivity extends MapActivity {
 	public void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
 		// Make sure the activity is receiving location updates by the LocationProvider:
-		locationManager.requestLocationUpdates(TAG_LOCATION, 0, 0, listener);
+		locationManager.requestLocationUpdates(tagLocation, 0, 0, listener);
 		
 		// Resolve intent and update location:
 		IntentResolver i = new IntentResolver(getApplicationContext(), intent);
@@ -355,7 +350,7 @@ public class GMapActivity extends MapActivity {
 			if (resultCode == RESULT_OK) {
 				
 				// Make sure the activity is getting location updates:
-				locationManager.requestLocationUpdates(TAG_LOCATION, 0, 0,
+				locationManager.requestLocationUpdates(tagLocation, 0, 0,
 						listener);
 				
 				// Resolve resulting intent:
@@ -378,8 +373,7 @@ public class GMapActivity extends MapActivity {
 	 * 2.3.3 or later.
 	 */
 	private boolean hasNfcSupport() {
-		return (Build.VERSION.SDK_INT >= 10 && NfcAdapter
-				.getDefaultAdapter(getApplicationContext()) != null);
+		return (Build.VERSION.SDK_INT >= 10 && nfcAdapter != null);
 	}
 
 	// TODO: Remove duplication
@@ -425,10 +419,10 @@ public class GMapActivity extends MapActivity {
 	private void createLocationProvider() {
 
 		// If LocationProvider already exists, remove it and renew it:
-		if (locationManager.getProvider(TAG_LOCATION) != null) {
-			locationManager.removeTestProvider(TAG_LOCATION);
+		if (locationManager.getProvider(tagLocation) != null) {
+			locationManager.removeTestProvider(tagLocation);
 		}
-		locationManager.addTestProvider(TAG_LOCATION, "requiresNetwork" == "",
+		locationManager.addTestProvider(tagLocation, "requiresNetwork" == "",
 				"requiresSatellite" == "", "requiresCell" == "",
 				"hasMonetaryCost" == "", "supportsAltitude" == "",
 				"supportsSpeed" == "", "supportsBearing" == "",
@@ -443,17 +437,17 @@ public class GMapActivity extends MapActivity {
 	 * @param lat geographic latitude
 	 */
 	private void updateLocation(double lon, double lat) {
-		Location newLocation = new Location(TAG_LOCATION);
+		Location newLocation = new Location(tagLocation);
 
 		newLocation.setLatitude(lat);
 		newLocation.setLongitude(lon);
 
-		locationManager.setTestProviderEnabled(TAG_LOCATION, true);
+		locationManager.setTestProviderEnabled(tagLocation, true);
 
-		locationManager.setTestProviderStatus(TAG_LOCATION,
+		locationManager.setTestProviderStatus(tagLocation,
 				LocationProvider.AVAILABLE, null, System.currentTimeMillis());
 
-		locationManager.setTestProviderLocation(TAG_LOCATION, newLocation);
+		locationManager.setTestProviderLocation(tagLocation, newLocation);
 	}
 
 	/**
@@ -491,14 +485,14 @@ public class GMapActivity extends MapActivity {
 	private void checkForFiles() {
 		if (!fileExists(SettingsSingleton.getInstance().getDatapath()
 				+ SettingsSingleton.getInstance().getDatafile())) {
-			copyDefault(DEFAULTLINKFILE);
-			SettingsSingleton.getInstance().setDatafile(DEFAULTLINKFILE);
+			copyDefault(defaultLinkFile);
+			SettingsSingleton.getInstance().setDatafile(defaultLinkFile);
 		}
 		if (!fileExists(SettingsSingleton.getInstance().getDatapath()
 				+ SettingsSingleton.getInstance().getGeometryfile())) {
-			copyDefault(DEFAULTGEOMETRYFILE);
+			copyDefault(defaultGeometryFile);
 			SettingsSingleton.getInstance()
-					.setGeometryfile(DEFAULTGEOMETRYFILE);
+					.setGeometryfile(defaultGeometryFile);
 		}
 	}
 
@@ -518,14 +512,14 @@ public class GMapActivity extends MapActivity {
 	 */
 	private void copyDefault(String file) {
 		File dir = new File(Environment.getExternalStorageDirectory().getName()
-				+ DATAPATH);
+				+ dataPath);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
 		try {
 			InputStream in = getAssets().open(file);
 			OutputStream out = new FileOutputStream(new File(Environment
-					.getExternalStorageDirectory().getName() + DATAPATH + file));
+					.getExternalStorageDirectory().getName() + dataPath + file));
 
 			byte[] buf = new byte[8192];
 			int len;
@@ -545,10 +539,8 @@ public class GMapActivity extends MapActivity {
 	 */
 	private void startEditMode() {
 		this.editMode = true;
-		editOverlay = new EditModeOverlay(getApplicationContext());
 		mapOverlays.add(editOverlay);
 		mapView.invalidate();
-		btnLayout = (LinearLayout) findViewById(R.id.btnLayout);
 		btnLayout.setVisibility(LinearLayout.VISIBLE);
 		Button cancelBtn = (Button) findViewById(R.id.cancelAddTagBtn);
 		cancelBtn.setOnClickListener(new OnClickListener() {
@@ -583,7 +575,6 @@ public class GMapActivity extends MapActivity {
 			mapOverlays.remove(mapOverlays.indexOf(editOverlay));
 		}
 		mapView.invalidate();
-		btnLayout = (LinearLayout) findViewById(R.id.btnLayout);
 		btnLayout.setVisibility(LinearLayout.INVISIBLE);
 	}
 
