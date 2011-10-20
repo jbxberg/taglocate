@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_link_file">default.iir</string>
+    <string name="datapath">/taglocate/</string>
+    <string name="default_geometry_file">default.osm</string>
+    <string name="default_zoom">20</string>
+    <string name="default_lat">52.545490803744265</string>
+    <string name="default_lon">13.355747670676614</string>
+    <string name="tag_location_provider">taglocation</string>
+    
+</resources>

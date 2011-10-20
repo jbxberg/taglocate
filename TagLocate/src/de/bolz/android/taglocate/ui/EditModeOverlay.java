@@ -18,6 +18,7 @@
 
 package de.bolz.android.taglocate.ui;
 
+import android.app.Application;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -25,6 +26,8 @@ import android.graphics.Canvas;
 import android.graphics.Point;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
+import com.google.inject.Inject;
+
 import de.bolz.android.taglocate.R;
 
 /**
@@ -39,7 +42,8 @@ public class EditModeOverlay extends Overlay {
 	/**
 	 * @param context the context of the calling class (activity)
 	 */
-	public EditModeOverlay(Context context) {
+	@Inject
+	public EditModeOverlay(Application context) {
 		this.context = context;
 	}
 
