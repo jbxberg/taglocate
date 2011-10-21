@@ -47,6 +47,9 @@ import com.google.android.maps.Overlay;
 import com.google.inject.Inject;
 
 import de.bolz.android.taglocate.R;
+import de.bolz.android.taglocate.app.annotation.NfcFilters;
+import de.bolz.android.taglocate.app.annotation.NfcSupport;
+import de.bolz.android.taglocate.app.annotation.TechLists;
 import de.bolz.android.taglocate.protocol.IntentResolver;
 import de.bolz.android.taglocate.protocol.SettingsSingleton;
 
@@ -62,11 +65,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.nfc.NfcAdapter;
-import android.nfc.tech.Ndef;
-import android.nfc.tech.NdefFormatable;
-import android.nfc.tech.NfcA;
-import android.nfc.tech.NfcV;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
@@ -117,12 +115,13 @@ public class GMapActivity extends RoboMapActivity {
 	@Inject private LocationManager locationManager;
 	@Inject SharedPreferences prefs;
 	@Inject NfcAdapter nfcAdapter;
+	@Inject @NfcFilters private IntentFilter[] filters;
+	@Inject @TechLists private String[][] techLists;
+	@Inject @NfcSupport boolean nfcSupported;
 	
 	private List<Overlay> mapOverlays;
 	private MapController mapController;
 	private PendingIntent pi;
-	private IntentFilter[] filters;
-	private String[][] techLists;
 	private LocationListener listener;
 	private boolean editMode = false;
 	private double lon = 0;
@@ -203,8 +202,9 @@ public class GMapActivity extends RoboMapActivity {
 
 			// Check for NFC support on the device. If NFC is supported,
 			// create appropriate intent-filters:
-			if (hasNfcSupport()) {
-				setNfcFilters();
+			if (nfcSupported) {
+				pi = PendingIntent.getActivity(this, 0, new Intent(this, getClass())
+				.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
 			}
 		}
 	}
@@ -233,7 +233,7 @@ public class GMapActivity extends RoboMapActivity {
 			ed.commit();
 			
 			// Check NFC support, disable foreground intent dispatch:
-			if (hasNfcSupport()) {
+			if (nfcSupported) {
 				nfcAdapter.disableForegroundDispatch(
 						this);
 			}
@@ -252,7 +252,7 @@ public class GMapActivity extends RoboMapActivity {
 			showMLDialog();
 		} else {
 			// Check for NFC support, enable foreground intent dispatch:
-			if (hasNfcSupport()) {
+			if (nfcSupported) {
 				nfcAdapter.enableForegroundDispatch(this, pi, filters, techLists);
 			}
 		}
@@ -366,53 +366,6 @@ public class GMapActivity extends RoboMapActivity {
 		}
 	}
 
-	// TODO: Remove duplication
-	/**
-	 * Checks for NFC support on the device.
-	 * @return true if the device hardware supports NFC and is running Android
-	 * 2.3.3 or later.
-	 */
-	private boolean hasNfcSupport() {
-		return (Build.VERSION.SDK_INT >= 10 && nfcAdapter != null);
-	}
-
-	// TODO: Remove duplication
-	/**
-	 * Sets intent-filters for NFC foreground dispatch.
-	 */
-	
-	private void setNfcFilters() {
-		// Foreground Dispatch:
-		pi = PendingIntent.getActivity(this, 0, new Intent(this, getClass())
-				.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
-		
-		// Create intent-filters for geo and iii scheme:
-		IntentFilter geoFilter = new IntentFilter(
-				NfcAdapter.ACTION_NDEF_DISCOVERED);
-		geoFilter.addDataScheme("geo");
-		IntentFilter iiiFilter = new IntentFilter(
-				NfcAdapter.ACTION_NDEF_DISCOVERED);
-		iiiFilter.addDataScheme("iii");
-		
-		// Create intent-filters for all NDEF compatible tags and
-		// NfcA and NfcV RFID tags in order to read their UID's:
-		IntentFilter ndefFilter = new IntentFilter(
-				NfcAdapter.ACTION_NDEF_DISCOVERED);
-		IntentFilter techFilter = new IntentFilter(
-				NfcAdapter.ACTION_TECH_DISCOVERED);
-
-	
-		filters = new IntentFilter[] { geoFilter, iiiFilter, ndefFilter,
-				techFilter };
-		
-		// Setup tech list filters for NfcA (ISO 14443) and NfcV (ISO 15693) tags
-		techLists = new String[4][1];
-		techLists[0][0] = NfcA.class.getName();
-		techLists[1][0] = NfcV.class.getName();
-		techLists[2][0] = Ndef.class.getName();
-		techLists[3][0] = NdefFormatable.class.getName();
-	}
-
 	/**
 	 * Creates custom LocationProvider. 
 	 */
@@ -476,6 +429,7 @@ public class GMapActivity extends RoboMapActivity {
 		return "1".equals(Settings.Secure.getString(getContentResolver(),
 				Settings.Secure.ALLOW_MOCK_LOCATION));
 	}
+	
 
 	/**
 	 * Checks if there is a taglocate folder on the sdcard directory and whether
@@ -505,6 +459,7 @@ public class GMapActivity extends RoboMapActivity {
 		File f = new File(uri);
 		return f.exists();
 	}
+	
 
 	/**
 	 * Copies default files to the taglocate sdcard folder.
