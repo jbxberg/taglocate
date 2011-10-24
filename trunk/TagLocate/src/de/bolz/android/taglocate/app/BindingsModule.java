@@ -5,6 +5,8 @@ import com.google.inject.Provides;
 import de.bolz.android.taglocate.app.annotation.NfcFilters;
 import de.bolz.android.taglocate.app.annotation.NfcSupport;
 import de.bolz.android.taglocate.app.annotation.TechLists;
+import de.bolz.android.taglocate.protocol.FileIdResolver;
+import de.bolz.android.taglocate.protocol.IdResolver;
 import android.app.Application;
 import android.content.IntentFilter;
 import android.nfc.NfcAdapter;
@@ -20,18 +22,7 @@ public class BindingsModule extends AbstractAndroidModule {
 
 	@Override
 	protected void configure() {
-		
-		// workaround for http://groups.google.com/group/roboguice/browse_thread/thread/447c22b833b4992b/9f8428348c77bfba
-//		bind(String.class).annotatedWith(SharedPreferencesName.class)
-//			.toProvider(PreferencesNameProvider.class);
-		
-//		bind(NfcAdapter.class).toProvider(NfcAdapterProvider.class);
-//		bind(String[][].class).annotatedWith(TechLists.class)
-//			.toProvider(TechListsProvider.class);
-//		bind(IntentFilter[].class).annotatedWith(NfcFilters.class)
-//			.toProvider(NfcIntentFiltersProvider.class);
-//		bind(boolean.class).annotatedWith(NfcSupport.class)
-//			.toProvider(NfcSupportedProvider.class);
+		bind(IdResolver.class).to(FileIdResolver.class);
 	}
 	
 	// workaround for http://groups.google.com/group/roboguice/browse_thread/thread/447c22b833b4992b/9f8428348c77bfba

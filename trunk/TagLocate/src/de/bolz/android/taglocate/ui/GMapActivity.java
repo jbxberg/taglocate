@@ -45,12 +45,15 @@ import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 
+import de.berlin.magun.nfcmime.core.RfidDAO;
 import de.bolz.android.taglocate.R;
 import de.bolz.android.taglocate.app.annotation.NfcFilters;
 import de.bolz.android.taglocate.app.annotation.NfcSupport;
 import de.bolz.android.taglocate.app.annotation.TechLists;
-import de.bolz.android.taglocate.protocol.IntentResolver;
+import de.bolz.android.taglocate.geom.Coordinates;
+import de.bolz.android.taglocate.protocol.LocationResolver;
 import de.bolz.android.taglocate.protocol.SettingsSingleton;
 
 import android.app.AlertDialog;
@@ -65,6 +68,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.nfc.NfcAdapter;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
@@ -118,6 +122,8 @@ public class GMapActivity extends RoboMapActivity {
 	@Inject @NfcFilters private IntentFilter[] filters;
 	@Inject @TechLists private String[][] techLists;
 	@Inject @NfcSupport boolean nfcSupported;
+	@Inject RfidDAO rfidDao;
+	@Inject Provider<LocationResolver> locationResolverProvider;
 	
 	private List<Overlay> mapOverlays;
 	private MapController mapController;
@@ -166,7 +172,7 @@ public class GMapActivity extends RoboMapActivity {
 							true));
 			SettingsSingleton.getInstance().setStrategy(
 					prefs.getString(getString(R.string.strategy_preference),
-							IntentResolver.UID_FIRST));
+							LocationResolver.UID_FIRST));
 
 			// Check if link and geometry files are available within the
 			// application folder on the sdcard file system. If not, create default
@@ -262,16 +268,27 @@ public class GMapActivity extends RoboMapActivity {
 	 * In this activity, this method handles NFC intents delivered by foreground dispatch.
 	 */
 	@Override
+
 	public void onNewIntent(Intent intent) {
-		super.onNewIntent(intent);
-		// Make sure the activity is receiving location updates by the LocationProvider:
-		locationManager.requestLocationUpdates(tagLocation, 0, 0, listener);
-		
-		// Resolve intent and update location:
-		IntentResolver i = new IntentResolver(getApplicationContext(), intent);
-		if (i.getLocation() != null) {
-			updateLocation(i.getLocation().getLon(), i.getLocation().getLat());
+		if (intent.getAction().equals(NfcAdapter.ACTION_NDEF_DISCOVERED)
+				|| intent.getAction().equals(NfcAdapter.ACTION_TECH_DISCOVERED)) {
+			super.onNewIntent(intent);
+			// Make sure the activity is receiving location updates by the
+			// LocationProvider:
+			locationManager.requestLocationUpdates(tagLocation, 0, 0, listener);
+
+			// Resolve intent and update location:
+			Coordinates c = locationResolverProvider.get().resolve(intent.getDataString(), 
+					rfidDao.getTagId((Tag) intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)));
+			if (c != null) {
+				updateLocation(c.getLon(), c.getLat());
+			}
 		}
+//		// Resolve intent and update location:
+//		LocationResolver i = new LocationResolver(getApplicationContext(), intent);
+//		if (i.getLocation() != null) {
+//			updateLocation(i.getLocation().getLon(), i.getLocation().getLat());
+//		}
 	}
 
 	/** 
@@ -354,12 +371,16 @@ public class GMapActivity extends RoboMapActivity {
 						listener);
 				
 				// Resolve resulting intent:
-				IntentResolver i = new IntentResolver(getApplicationContext(),
-						intent);
-				if (i.getLocation() != null) {
-					updateLocation(i.getLocation().getLon(), i.getLocation()
-							.getLat());
+				Coordinates c = locationResolverProvider.get().resolve(intent.getStringExtra("SCAN_RESULT"));
+				if (c != null) {
+					updateLocation(c.getLon(), c.getLat());
 				}
+//				LocationResolver i = new LocationResolver(getApplicationContext(),
+//						intent);
+//				if (i.getLocation() != null) {
+//					updateLocation(i.getLocation().getLon(), i.getLocation()
+//							.getLat());
+//				}
 			} else if (resultCode == RESULT_CANCELED) {
 				// Handle cancel = do nothing.
 			}
