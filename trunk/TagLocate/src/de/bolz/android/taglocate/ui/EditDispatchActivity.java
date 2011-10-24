@@ -18,15 +18,17 @@
 
 package de.bolz.android.taglocate.ui;
 
+import roboguice.activity.RoboActivity;
+
+import com.google.inject.Inject;
+
 import de.bolz.android.taglocate.R;
-import android.app.Activity;
+import de.bolz.android.taglocate.app.annotation.NfcSupport;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.nfc.NfcAdapter;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.Window;
@@ -38,7 +40,7 @@ import android.widget.Toast;
  * @author Johannes Bolz
  *
  */
-public class EditDispatchActivity extends Activity {
+public class EditDispatchActivity extends RoboActivity {
 	
 	// Impossible coordinate value:
 	public static final int COORDINATENOTSET = -2147483648;
@@ -47,6 +49,7 @@ public class EditDispatchActivity extends Activity {
 	private AlertDialog dialog;
 	private int latInt;
 	private int lonInt;
+	@Inject @NfcSupport boolean nfcSupported;
 	
     /** Called when the activity is first created. */
     @Override
@@ -80,7 +83,7 @@ public class EditDispatchActivity extends Activity {
 						
 						// Write NFC tag:
 						if (which == 0) {
-							if(hasNfcSupport()) {
+							if(nfcSupported) {
 								Intent i = new Intent(EditDispatchActivity.this, 
 										NfcEditActivity.class);
 								// Request write mode, pass coordinates:
@@ -99,7 +102,7 @@ public class EditDispatchActivity extends Activity {
 						
 						// Reference NFC ID:
 						else if (which == 1) {
-							if(hasNfcSupport()) {
+							if(nfcSupported) {
 								Intent i = new Intent(EditDispatchActivity.this, 
 										NfcEditActivity.class);
 								// Request read mode, pass coordinates:
@@ -162,17 +165,6 @@ public class EditDispatchActivity extends Activity {
     	this.finish();
     	this.onDestroy();
     }
-    
-    // TODO: Remove duplication
-    /**
-	 * Checks for NFC support on the device.
-	 * @return true if the device hardware supports NFC and is running Android
-	 * 2.3.3 or later.
-	 */
-	private boolean hasNfcSupport() {
-		return (Build.VERSION.SDK_INT >= 10 && NfcAdapter
-				.getDefaultAdapter(getApplicationContext()) != null);
-	}
 	
 	/**
 	 * Shows a Toast stating the device doesn't support NFC.

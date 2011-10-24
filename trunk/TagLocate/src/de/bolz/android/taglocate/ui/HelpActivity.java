@@ -18,8 +18,10 @@
 package de.bolz.android.taglocate.ui;
 
 
+import roboguice.activity.RoboActivity;
+import roboguice.inject.InjectResource;
+import roboguice.inject.InjectView;
 import de.bolz.android.taglocate.R;
-import android.app.Activity;
 import android.os.Bundle;
 import android.webkit.WebView;
 
@@ -27,8 +29,9 @@ import android.webkit.WebView;
  * This activity displays the application's HTML help / credits pages.
  * @author Johannes Bolz
  */
-public class HelpActivity extends Activity{
-	private WebView webView;
+public class HelpActivity extends RoboActivity {
+	@InjectView(R.id.webview) private WebView webView;
+	@InjectResource(R.string.help_url) String helpUrl;
 	
 	/**
 	 * Standard onCreate method.
@@ -39,8 +42,7 @@ public class HelpActivity extends Activity{
 	    setContentView(R.layout.help);
 
 	    // Populate WebVierw with HTML help page:
-	    webView = (WebView) findViewById(R.id.webview);
 	    webView.getSettings().setJavaScriptEnabled(true);
-	    webView.loadUrl(getString(R.string.help_url));
+	    webView.loadUrl(helpUrl);
 	}
 }

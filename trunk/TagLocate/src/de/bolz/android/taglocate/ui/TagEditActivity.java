@@ -32,6 +32,8 @@ import org.simpleframework.xml.core.Persister;
 import org.simpleframework.xml.stream.CamelCaseStyle;
 import org.simpleframework.xml.stream.Format;
 
+import roboguice.activity.RoboActivity;
+
 import de.berlin.magun.protocol.Source;
 import de.bolz.android.taglocate.R;
 import de.bolz.android.taglocate.protocol.GeoUri;
@@ -41,7 +43,6 @@ import de.bolz.android.taglocate.protocol.data.ReferenceList;
 import de.bolz.android.taglocate.protocol.data.Tag;
 import de.bolz.android.taglocate.protocol.data.Target;
 import de.bolz.android.taglocate.protocol.data.Trigger;
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -52,7 +53,7 @@ import android.widget.Toast;
  * @author Johannes Bolz
  *
  */
-public abstract class TagEditActivity extends Activity{
+public abstract class TagEditActivity extends RoboActivity{
 	
 	public static final String NFC = "nfc";
 	public static final String QR = "qr";
