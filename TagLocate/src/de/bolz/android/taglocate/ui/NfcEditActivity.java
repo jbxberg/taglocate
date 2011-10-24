@@ -26,9 +26,14 @@
 package de.bolz.android.taglocate.ui;
 
 import java.io.IOException;
+
+import com.google.inject.Inject;
+
 import de.berlin.magun.nfcmime.core.NdefMessageBuilder;
 import de.berlin.magun.nfcmime.core.RfidDAO;
 import de.bolz.android.taglocate.R;
+import de.bolz.android.taglocate.app.annotation.NfcFilters;
+import de.bolz.android.taglocate.app.annotation.TechLists;
 import de.bolz.android.taglocate.protocol.GeoUri;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
@@ -41,8 +46,6 @@ import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
-import android.nfc.tech.NfcA;
-import android.nfc.tech.NfcV;
 import android.os.Bundle;
 import android.view.Window;
 import android.widget.Toast;
@@ -60,11 +63,14 @@ public class NfcEditActivity extends TagEditActivity{
 	private static final int NOTSET = -1;
 		
 	private PendingIntent pi;
-	private IntentFilter[] filters;
-	private String[][] techLists;
 	private Tag tag;
 	private int mode;
 	private AlertDialog infoDialog;
+	@Inject @NfcFilters private IntentFilter[] filters;
+	@Inject @TechLists private String[][] techLists;
+	@Inject private NfcAdapter nfcAdapter;
+	@Inject private NdefMessageBuilder msgBuilder;
+	@Inject private RfidDAO dao;
 	
     /** Called when the activity is first created. */
     @Override
@@ -75,7 +81,6 @@ public class NfcEditActivity extends TagEditActivity{
         this.mode = i.getIntExtra(getString(R.string.nfc_edit_mode), NOTSET);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
 		this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		setNfcFilters();
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setMessage(getString(R.string.initial_nfc_dialog));
 		
@@ -88,6 +93,8 @@ public class NfcEditActivity extends TagEditActivity{
 		});
 		infoDialog = builder.create();
 		infoDialog.show();
+		pi = PendingIntent.getActivity(this, 0, new Intent(this, getClass())
+			.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
     }
     
     /**
@@ -96,7 +103,7 @@ public class NfcEditActivity extends TagEditActivity{
     @Override
     public void onPause() {
     	super.onPause();
-    	NfcAdapter.getDefaultAdapter(this).disableForegroundDispatch(this);
+    	nfcAdapter.disableForegroundDispatch(this);
     }
     
     /**
@@ -105,9 +112,7 @@ public class NfcEditActivity extends TagEditActivity{
     @Override
     public void onResume() {
     	super.onResume();
-    	NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
-		adapter.enableForegroundDispatch(this, pi, filters, techLists);
-		adapter.enableForegroundDispatch(this, pi, filters, techLists);
+		nfcAdapter.enableForegroundDispatch(this, pi, filters, techLists);
     }
     
     /**
@@ -131,14 +136,12 @@ public class NfcEditActivity extends TagEditActivity{
 	 * Writes a Geo-URI to the NFC tag.
 	 */
     private void writeTag() {
-		NdefMessageBuilder builder = new NdefMessageBuilder();
 		
 		// Build Geo-URI, recalculate coordinate int values to decimal degrees: 
 		GeoUri uri = new GeoUri(((double) this.latInt) / 1000000,
 				((double) this.lonInt) / 1000000);
 		try {
-			builder.addUriRecord(uri.getString());
-			RfidDAO dao = new RfidDAO();
+			msgBuilder.addUriRecord(uri.getString());
 
 			// Format tag to NDEF, if not already done:
 			if (NdefFormatable.get(tag) != null) {
@@ -148,8 +151,8 @@ public class NfcEditActivity extends TagEditActivity{
 
 			// Write tag, if it is NDEF-compliant:
 			if (Ndef.get(tag) != null
-					&& builder.getDataSize() <= Ndef.get(tag).getMaxSize()) {
-				dao.writeMessage(tag, builder.buildMessage());
+					&& msgBuilder.getDataSize() <= Ndef.get(tag).getMaxSize()) {
+				dao.writeMessage(tag, msgBuilder.buildMessage());
 				showToast(getString(R.string.done), Toast.LENGTH_SHORT);
 				infoDialog.dismiss();
 				this.finish();
@@ -174,7 +177,6 @@ public class NfcEditActivity extends TagEditActivity{
      * References a NFC ID in the reference model.
      */
     private void referenceTag() {
-    	RfidDAO dao = new RfidDAO();
     	String id = dao.getTagId(tag);
     	referenceId(id, NFC);	
     	showToast(getString(R.string.reference_done) + " " + id, Toast.LENGTH_SHORT);
@@ -182,40 +184,4 @@ public class NfcEditActivity extends TagEditActivity{
     	this.finish();
     }
     
-    
-    // TODO: Remove duplication
-    /**
-	 * Sets intent-filters for NFC foreground dispatch.
-	 */
-	private void setNfcFilters() {
-		// Foreground Dispatch:
-		pi = PendingIntent.getActivity(this, 0, new Intent(this, getClass())
-				.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
-		
-		// Create intent-filters for geo and iii scheme:
-		IntentFilter geoFilter = new IntentFilter(
-				NfcAdapter.ACTION_NDEF_DISCOVERED);
-		geoFilter.addDataScheme("geo");
-		IntentFilter iiiFilter = new IntentFilter(
-				NfcAdapter.ACTION_NDEF_DISCOVERED);
-		iiiFilter.addDataScheme("iii");
-		
-		// Create intent-filters for all NDEF compatible tags and
-		// NfcA and NfcV RFID tags in order to read their UID's:
-		IntentFilter ndefFilter = new IntentFilter(
-				NfcAdapter.ACTION_NDEF_DISCOVERED);
-		IntentFilter techFilter = new IntentFilter(
-				NfcAdapter.ACTION_TECH_DISCOVERED);
-
-	
-		filters = new IntentFilter[] { geoFilter, iiiFilter, ndefFilter,
-				techFilter };
-		
-		// Setup tech list filters for NfcA (ISO 14443) and NfcV (ISO 15693) tags
-		techLists = new String[4][1];
-		techLists[0][0] = NfcA.class.getName();
-		techLists[1][0] = NfcV.class.getName();
-		techLists[2][0] = Ndef.class.getName();
-		techLists[3][0] = NdefFormatable.class.getName();
-	}
 }

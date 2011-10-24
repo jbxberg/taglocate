@@ -375,12 +375,7 @@ public class GMapActivity extends RoboMapActivity {
 				if (c != null) {
 					updateLocation(c.getLon(), c.getLat());
 				}
-//				LocationResolver i = new LocationResolver(getApplicationContext(),
-//						intent);
-//				if (i.getLocation() != null) {
-//					updateLocation(i.getLocation().getLon(), i.getLocation()
-//							.getLat());
-//				}
+
 			} else if (resultCode == RESULT_CANCELED) {
 				// Handle cancel = do nothing.
 			}
