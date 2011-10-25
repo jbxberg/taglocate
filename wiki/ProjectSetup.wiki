@@ -6,7 +6,7 @@
 [http://code.google.com/p/taglocate/source/checkout See here.] 
 
 * 2. Import projects*
-Make sure to have both the [TagLocate] as well as the [NfcMimeLib] project added to your workspace.
+Make sure to have both the !TagLocate as well as the !NfcMimeLib project added to your workspace.
 
 * 3. Dependencies*
 I'm planning to use Maven at some point, but for now, you'll need to add the following jars manually to the build path:
